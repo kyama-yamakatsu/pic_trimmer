@@ -21,17 +21,17 @@ public class PropertyWindow extends JDialog implements ActionListener {
     private JFrame               main;
     private Properties           properties;
 
-    // •K—v‚È Property
-    // Load directory •¶š—ñ•\¦ - İ’èƒ{ƒ^ƒ“
+    // å¿…è¦ãª Property
+    // Load directory æ–‡å­—åˆ—è¡¨ç¤º - è¨­å®šãƒœã‚¿ãƒ³
     // Aspect
     // Upper margin
     // Bottom margin
     // Left margin
     // Right margin
-    // Noise mask bit ‚P‚Ui•\‹L ex) f0f0f0
+    // Noise mask bit ï¼‘ï¼–é€²è¡¨è¨˜ ex) f0f0f0
     // detect length
 
-    // properties •Ï”
+    // properties å¤‰æ•°
     private String dirPath;
     private String aspect;
     private int u_margin, b_margin, l_margin, r_margin;
@@ -47,9 +47,9 @@ public class PropertyWindow extends JDialog implements ActionListener {
     JTextField noise_maskTF;
     JTextField detect_lenTF;
 
-    // ƒAƒXƒyƒNƒg”äƒvƒƒpƒeƒB
-    // ˆêŠáƒŒƒtƒJƒƒ‰ 3F2
-    // ƒRƒ“ƒpƒNƒgƒfƒWƒJƒ 4F3
+    // ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯”ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£
+    // ä¸€çœ¼ãƒ¬ãƒ•ã‚«ãƒ¡ãƒ© 3ï¼š2
+    // ã‚³ãƒ³ãƒ‘ã‚¯ãƒˆãƒ‡ã‚¸ã‚«ãƒ¡ 4ï¼š3
     // iPhone 3:2
     // android 4:3, 16:9
     String[] aspect_items = { "3:2", "4:3", "16:9", "1:1" };
@@ -267,7 +267,7 @@ public class PropertyWindow extends JDialog implements ActionListener {
 	main.repaint();
     }
 
-    // •Ï”’l‚ğ‚t‚h‚Éİ’è‚·‚é
+    // å¤‰æ•°å€¤ã‚’ï¼µï¼©ã«è¨­å®šã™ã‚‹
     void set() {
 	dirPathTF.setText(dirPath);
 	aspectCB.setSelectedItem(aspect);
@@ -279,7 +279,7 @@ public class PropertyWindow extends JDialog implements ActionListener {
 	detect_lenTF.setText(String.valueOf(detect_len));
     }
 
-    // ‚t‚hİ’èƒf[ƒ^‚ğ•Ï”‚É–ß‚·
+    // ï¼µï¼©è¨­å®šãƒ‡ãƒ¼ã‚¿ã‚’å¤‰æ•°ã«æˆ»ã™
     void get() {
 	dirPath = dirPathTF.getText();
 	aspect = (String)aspectCB.getSelectedItem();
@@ -290,7 +290,7 @@ public class PropertyWindow extends JDialog implements ActionListener {
 	noise_mask = noise_maskTF.getText();
 	detect_len = Integer.valueOf(detect_lenTF.getText());
 
-	// ‚±‚±‚Åİ’è‚ğ Property ‚É•Û‘¶‚µƒZ[ƒu‚µ‚Ä‚¨‚­
+	// ã“ã“ã§è¨­å®šã‚’ Property ã«ä¿å­˜ã—ã‚»ãƒ¼ãƒ–ã—ã¦ãŠã
 	properties.setProperty("dirPath",dirPath);
 	properties.setProperty("aspect",aspect);
 	properties.setProperty("u_margin",String.valueOf(u_margin));

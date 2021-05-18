@@ -73,10 +73,10 @@ public class Commander implements ActionListener {
         popupMenu.show( (JFrame)main, point.x - 5, point.y - 5 );
     }
 
-    // ‘½‚­‚Ì‰æ‘œƒtƒ@ƒCƒ‹‚ðŠJ‚«AÅ¬ƒGƒŠƒA‚ð’²‚×‚Ä‚¢‚­ŠÔ‚Í
-    // •`‰æ‚âƒƒbƒZ[ƒW‚ªŽ~‚Ü‚Á‚Ä‚µ‚Ü‚¤‚Ì‚ÅA‚»‚Ì•”•ª‚Í•ÊƒXƒŒƒbƒh‚É‚·‚é
-    // ‚»‚ÌŠÔ‚É‘€ì‚ðŽó‚¯•t‚¯‚é‚Æ‘Î‰ž‚ª–Ê“|‚È‚Ì‚Å‘€ìŽó•t‚ðŽ~‚ß‚é
-    // ‚¿‚å‚Á‚Æƒ_ƒT‚¢‚ª‹ê˜J‚µ‚Ä‚±‚¾‚í‚é‚±‚Æ‚à‚ ‚é‚Ü‚¢
+    // å¤šãã®ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‹ãã€æœ€å°ã‚¨ãƒªã‚¢ã‚’èª¿ã¹ã¦ã„ãé–“ã¯
+    // æç”»ã‚„ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒæ­¢ã¾ã£ã¦ã—ã¾ã†ã®ã§ã€ãã®éƒ¨åˆ†ã¯åˆ¥ã‚¹ãƒ¬ãƒƒãƒ‰ã«ã™ã‚‹
+    // ãã®é–“ã«æ“ä½œã‚’å—ã‘ä»˜ã‘ã‚‹ã¨å¯¾å¿œãŒé¢å€’ãªã®ã§æ“ä½œå—ä»˜ã‚’æ­¢ã‚ã‚‹
+    // ã¡ã‚‡ã£ã¨ãƒ€ã‚µã„ãŒè‹¦åŠ´ã—ã¦ã“ã ã‚ã‚‹ã“ã¨ã‚‚ã‚ã‚‹ã¾ã„
     private class setPicture_detectTrim_thread implements Runnable {
 	setPicture_detectTrim_thread() {}
         public void run() {
@@ -85,7 +85,7 @@ public class Commander implements ActionListener {
 	    if ( result ) {
 		process_pic = 0;
 		triming();
-		message.println("ƒgƒŠƒ~ƒ“ƒO‚µ‚Ä Save and Next ‚ðŽÀs‚µ‚Ü‚·");
+		message.println("ãƒˆãƒªãƒŸãƒ³ã‚°ã—ã¦ Save and Next ã‚’å®Ÿè¡Œã—ã¾ã™");
 	    }
             loading = false;
         }
@@ -200,7 +200,7 @@ public class Commander implements ActionListener {
 		message.println(
 		    pic_list[i] + " - " + xl + " : " + yu + " : " +xr+" : "+yb);
 
-		// Å‚à¬‚³‚¢ƒgƒŠƒ€ƒTƒCƒY‚ð‹‚ß‚é
+		// æœ€ã‚‚å°ã•ã„ãƒˆãƒªãƒ ã‚µã‚¤ã‚ºã‚’æ±‚ã‚ã‚‹
 		if ( trim_w > ( xr - xl ) )
 		    trim_w = xr - xl;
 		if ( trim_h > ( yb - yu ) )
