@@ -38,7 +38,7 @@ public final class Main extends JFrame
 
 
     Main() {
-        super("Pic Trimmer ver. 1.0");
+        super("Pic Trimmer ver. 1.2");
 	setPreferredSize( new Dimension(WIDTH, HEIGHT) );
 	Dimension dim = getToolkit().getScreenSize();
 	setBounds(
