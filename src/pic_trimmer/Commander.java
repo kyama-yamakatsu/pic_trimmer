@@ -13,6 +13,24 @@ import java.io.*;
 import java.awt.*;
 import javax.swing.*;
 
+// for Exif (Exchangeable image file format)
+import java.util.Calendar;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+
+import org.apache.commons.imaging.ImageReadException;
+import org.apache.commons.imaging.ImageWriteException;
+import org.apache.commons.imaging.Imaging;
+import org.apache.commons.imaging.common.ImageMetadata;
+import org.apache.commons.imaging.common.RationalNumber;
+import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
+import org.apache.commons.imaging.formats.jpeg.exif.ExifRewriter;
+import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
+import org.apache.commons.imaging.formats.tiff.constants.TiffTagConstants;
+import org.apache.commons.imaging.formats.tiff.constants.ExifTagConstants;
+import org.apache.commons.imaging.formats.tiff.write.TiffOutputDirectory;
+import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
+
 
 public class Commander implements ActionListener {
 
@@ -41,8 +59,9 @@ public class Commander implements ActionListener {
 	process_pic = 0;
 	pic_image = null;
 	img_w = img_h = 0;
-    }
 
+	message.println("右クリック Set Picture directory.. で開始します");
+    }
 
     public BufferedImage getPicture() { return pic_image; }
 
@@ -62,7 +81,7 @@ public class Commander implements ActionListener {
 	menuItem.addActionListener(this);
         popupMenu.add(menuItem);
 
- 	menuItem = new JMenuItem("Oneshot test");
+ 	menuItem = new JMenuItem("Oneshot trim check");
         menuItem.addActionListener(this);
         popupMenu.add(menuItem);
 
@@ -106,8 +125,9 @@ public class Commander implements ActionListener {
 		thread = new Thread( new setPicture_detectTrim_thread() );
 	    thread.start();
 
-	} else if ( cmd.startsWith("Save and") ) {
-	    out_pic();
+	} else if ( cmd.startsWith("Save and ") ) {
+	    if ( out_pic() )
+		addExif(); // 正常出力出来れば Exif 情報を（変更）追加
 
 	    process_pic++;
 	    triming();
@@ -169,7 +189,8 @@ public class Commander implements ActionListener {
 	int t = 0;
 	for( int i=0; i<file_list.length; i++ )
 	    if ( file_list[i].isFile() )
-		if ( file_list[i].toString().endsWith(FileExtension) )
+		if ( file_list[i].toString().toLowerCase().
+		     endsWith(FileExtension) )
 		    t++;
 	if ( t == 0 ) {
 	    message.printErr("No picture!");
@@ -180,7 +201,8 @@ public class Commander implements ActionListener {
 	t = 0;
 	for( int i=0; i<file_list.length; i++ )
 	    if ( file_list[i].isFile() )
-		if ( file_list[i].toString().endsWith(FileExtension) )
+		if ( file_list[i].toString().toLowerCase().
+		     endsWith(FileExtension) )
 		    pic_list[t++] = file_list[i].toString();
 
 	int trim_w = 123456789, trim_h = 123456789;
@@ -220,7 +242,8 @@ public class Commander implements ActionListener {
 	if ( pic_list == null )
 	    return;
 	if ( process_pic >= pic_list.length ) {
-	    message.println("No processing picture.");
+	    // message.println("No processing picture.");
+	    message.println("対象のトリミング処理は終わりました");
 	    return;
 	}
 
@@ -244,35 +267,25 @@ public class Commander implements ActionListener {
 	main.setEdge(xl, xr, yu, yb);
     }
 
-    private void out_pic() {
+    private boolean out_pic() {
 	if ( pic_list == null )
-	    return;
+	    return false;
 	if ( process_pic >= pic_list.length ) {
 	    message.println("No processing picture.");
-	    return;
+	    return false;
 	}
-
-	// Exif
-/***
-https://drewnoakes.com/code/exif/
-https://totomo.net/850.htm
-https://qiita.com/sumeragizzz/items/739c435a7eca45d32bc8
-
-https://qiita.com/izuki_y/items/e7e6d3f2d8880e81afac
-https://ja.ojit.com/so/java/964827
-**/
 
 	String currentDirectory = property.getDirPath();
 	try {
 	    File dir = new File( currentDirectory + "/" + TrimedDirectory );
 	    dir.mkdir();
-	    String filepathname =
-		currentDirectory + "/" + TrimedDirectory + "/" +
+	    String not_yet_exif_filepathname =
+		currentDirectory + "/" + TrimedDirectory + "/_Not_Yet_Exif_" +
 		pic_list[process_pic].substring(
 		    pic_list[process_pic].lastIndexOf(File.separator)+1,
 		    pic_list[process_pic].length());
 
-	    File fo = new File( filepathname );
+	    File fo = new File( not_yet_exif_filepathname );
 	    Rectangle trim = main.getTrim();
 	    BufferedImage out_img =
 		pic_image.getSubimage(
@@ -280,10 +293,110 @@ https://ja.ojit.com/so/java/964827
 		    (int)trim.getWidth(), (int)trim.getHeight());
 	    ImageIO.write(out_img, "jpg", fo);
 
-	    message.println("write  = " + filepathname);
+	    message.println("write  = " + not_yet_exif_filepathname);
+	    return true;
 
 	} catch(IOException iox) {
 	    message.printErr("can't write picture.");
+	    return false;
+	}
+    }
+
+    // 以下参照
+    // https://github.com/apache/commons-imaging
+    //   -> src/test/java/org/apache/commons/imaging/examples/ の
+    //   -> WriteExifMetadataExample.java
+    private void addExif() {
+	String currentDirectory = property.getDirPath();
+	try {
+	    File dir = new File( currentDirectory + "/" + TrimedDirectory );
+	    dir.mkdir();
+	    String not_yet_exif_filepathname =
+		currentDirectory + "/" + TrimedDirectory + "/_Not_Yet_Exif_" +
+		pic_list[process_pic].substring(
+		    pic_list[process_pic].lastIndexOf(File.separator)+1,
+		    pic_list[process_pic].length());
+	    File not_yet_exif_file = new File( not_yet_exif_filepathname );
+
+	    String filepathname =
+		currentDirectory + "/" + TrimedDirectory + "/" +
+		pic_list[process_pic].substring(
+		    pic_list[process_pic].lastIndexOf(File.separator)+1,
+		    pic_list[process_pic].length());
+	    OutputStream os =
+		new BufferedOutputStream(
+		    new FileOutputStream(
+			new File( filepathname )));
+
+            TiffOutputSet outputSet = null;
+            final ImageMetadata metadata =
+		Imaging.getMetadata(not_yet_exif_file);
+            final JpegImageMetadata jpegMetadata =
+		(JpegImageMetadata)metadata;
+            if (null != jpegMetadata) {
+                final TiffImageMetadata exif = jpegMetadata.getExif();
+                if (null != exif) {
+                    // TiffImageMetadata class is immutable (read-only).
+                    // TiffOutputSet class represents the Exif data to write.
+                    //
+                    // Usually, we want to update existing Exif metadata by
+                    // changing the values of a few fields, or adding a field.
+                    // In these cases, it is easiest to use getOutputSet() to
+                    // start with a "copy" of the fields read from the image.
+                    outputSet = exif.getOutputSet();
+                }
+            }
+
+            // if file does not contain any exif metadata, we create an empty
+            // set of exif metadata. Otherwise, we keep all of the other
+            // existing tags.
+            if (null == outputSet) {
+                outputSet = new TiffOutputSet();
+            }
+
+	    final TiffOutputDirectory exifDir =
+		outputSet.getOrCreateExifDirectory();
+	    // make sure to remove old value if present (this method will
+	    // not fail if the tag does not exist).
+	    exifDir.removeField(ExifTagConstants.EXIF_TAG_APERTURE_VALUE);
+	    exifDir.add(ExifTagConstants.EXIF_TAG_APERTURE_VALUE,
+			new RationalNumber(3, 10));
+
+	    // 撮影日時を設定
+	    Calendar cl = Calendar.getInstance();
+	    int y = property.getYyyy();
+	    int m = property.getM();
+	    int d = property.getD();
+	    cl.set( y, m-1, d,  7, 0, 0 ); // 時間は無意味
+	    Date date = new Date( cl.getTimeInMillis() );
+	    SimpleDateFormat dateFormat =
+		new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+	    exifDir.removeField(TiffTagConstants.TIFF_TAG_DATE_TIME);
+	    exifDir.add(TiffTagConstants.TIFF_TAG_DATE_TIME,
+			dateFormat.format(date));
+	    exifDir.removeField(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL);
+	    exifDir.add(ExifTagConstants.EXIF_TAG_DATE_TIME_ORIGINAL,
+			dateFormat.format(date));
+
+	    // この pic trimmer での処理をデジタイズ完了日時とする
+	    date = new Date();
+	    exifDir.removeField(ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED);
+	    exifDir.add(ExifTagConstants.EXIF_TAG_DATE_TIME_DIGITIZED,
+			dateFormat.format(date));
+
+            new ExifRewriter().updateExifMetadataLossless(
+		not_yet_exif_file, os, outputSet);
+
+	    // Exif 処理をしていない１時ファイルは削除する
+	    not_yet_exif_file.delete();
+
+	} catch(IOException iox) {
+	    message.printErr("can't write picture.");
+	} catch(ImageReadException ire) {
+	} catch(ImageWriteException iwe) {
+	    message.printErr("ImageWriteException : " + iwe.toString());
+	    // 日時フォーマットが 20バイト以下だと発生
+	    // .. Tag expects 20 byte(s), not 1
 	}
     }
 }

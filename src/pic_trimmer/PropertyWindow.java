@@ -30,6 +30,7 @@ public class PropertyWindow extends JDialog implements ActionListener {
     // Right margin
     // Noise mask bit １６進表記 ex) f0f0f0
     // detect length
+    // 撮影日時 yyyy, m, d
 
     // properties 変数
     private String dirPath;
@@ -37,6 +38,7 @@ public class PropertyWindow extends JDialog implements ActionListener {
     private int u_margin, b_margin, l_margin, r_margin;
     private String noise_mask;
     private int detect_len;
+    private int yyyy, m , d;
 
     // properties User Interface
     JTextField dirPathTF;
@@ -46,6 +48,7 @@ public class PropertyWindow extends JDialog implements ActionListener {
     JButton okB, applyB, closeB;
     JTextField noise_maskTF;
     JTextField detect_lenTF;
+    JTextField yyyyTF, mTF, dTF;
 
     // アスペクト比プロパティ
     // 一眼レフカメラ 3：2
@@ -76,6 +79,9 @@ public class PropertyWindow extends JDialog implements ActionListener {
 	r_margin = Integer.valueOf(properties.getProperty("r_margin","20"));
 	noise_mask =properties.getProperty("noise_mask","f0f0f0");
 	detect_len =Integer.valueOf(properties.getProperty("detect_len","200"));
+	yyyy = Integer.valueOf(properties.getProperty("yyyy","1990"));
+	m    = Integer.valueOf(properties.getProperty("m","7"));
+	d    = Integer.valueOf(properties.getProperty("d","7"));
 
 	JLabel lbl;
 	GridBagLayout gridbag = new GridBagLayout();
@@ -106,7 +112,7 @@ public class PropertyWindow extends JDialog implements ActionListener {
 	add(dirPathTF);
 	//
 	lbl = new JLabel("Aspect");
-	lbl.setPreferredSize(new Dimension(100,25));
+	lbl.setPreferredSize(new Dimension(200,25));
 	c.insets = new Insets(1, 2, 1, 1);
 	c.gridwidth = 2;
 	gridbag.setConstraints(lbl,c);
@@ -202,12 +208,40 @@ public class PropertyWindow extends JDialog implements ActionListener {
 	c.gridwidth = GridBagConstraints.REMAINDER;
 	gridbag.setConstraints(detect_lenTF, c);
 	add(detect_lenTF);
-	//
+
+	// Exif
+	lbl = new JLabel("Shooting date. ex)1990 7 7");
+	lbl.setPreferredSize(new Dimension(300,25));
+	c.insets = new Insets(1, 2, 1, 2);
+	c.gridwidth = GridBagConstraints.REMAINDER;
+	gridbag.setConstraints(lbl,c);
+	add(lbl);
+
+	yyyyTF = new JTextField();
+	yyyyTF.setPreferredSize(new Dimension(100,25));
+	c.insets = new Insets(1, 2, 1, 1);
+	c.gridwidth = 1;
+	gridbag.setConstraints(yyyyTF, c);
+	add(yyyyTF);
+	mTF = new JTextField();
+	mTF.setPreferredSize(new Dimension(100,25));
+	c.insets = new Insets(1, 1, 1, 1);
+	c.gridwidth = 1;
+	gridbag.setConstraints(mTF, c);
+	add(mTF);
+	dTF = new JTextField();
+	dTF.setPreferredSize(new Dimension(100,25));
+	c.insets = new Insets(1, 1, 1, 2);
+	c.gridwidth = GridBagConstraints.REMAINDER;
+	gridbag.setConstraints(dTF, c);
+	add(dTF);
+
+	// control button
 	okB = new JButton("OK");
 	okB.setPreferredSize(new Dimension(100,30));
 	okB.setActionCommand("ok");
 	okB.addActionListener(this);
-	c.insets = new Insets(1, 2, 1, 1);
+	c.insets = new Insets(1, 2, 2, 1);
 	c.gridwidth = 1;
 	gridbag.setConstraints(okB, c);
 	add(okB);
@@ -277,6 +311,9 @@ public class PropertyWindow extends JDialog implements ActionListener {
 	r_marginTF.setText(String.valueOf(r_margin));
 	noise_maskTF.setText(noise_mask);
 	detect_lenTF.setText(String.valueOf(detect_len));
+	yyyyTF.setText(String.valueOf(yyyy));
+	mTF.setText(String.valueOf(m));
+	dTF.setText(String.valueOf(d));
     }
 
     // ＵＩ設定データを変数に戻す
@@ -289,6 +326,9 @@ public class PropertyWindow extends JDialog implements ActionListener {
 	r_margin = Integer.valueOf(r_marginTF.getText());
 	noise_mask = noise_maskTF.getText();
 	detect_len = Integer.valueOf(detect_lenTF.getText());
+	yyyy = Integer.valueOf(yyyyTF.getText());
+	m = Integer.valueOf(mTF.getText());
+	d = Integer.valueOf(dTF.getText());
 
 	// ここで設定を Property に保存しセーブしておく
 	properties.setProperty("dirPath",dirPath);
@@ -299,6 +339,9 @@ public class PropertyWindow extends JDialog implements ActionListener {
 	properties.setProperty("r_margin",String.valueOf(r_margin));
 	properties.setProperty("noise_mask",noise_mask);
 	properties.setProperty("detect_len",String.valueOf(detect_len));
+	properties.setProperty("yyyy",String.valueOf(yyyy));
+	properties.setProperty("m",String.valueOf(m));
+	properties.setProperty("d",String.valueOf(d));
         try {
             BufferedOutputStream out =
                 new BufferedOutputStream(
@@ -316,6 +359,9 @@ public class PropertyWindow extends JDialog implements ActionListener {
     protected int getLMargin() { return l_margin; }
     protected int getRMargin() { return r_margin; }
     protected int getDetectLen() { return detect_len; }
+    protected int getYyyy() { return yyyy; }
+    protected int getM() { return m; }
+    protected int getD() { return d; }
     protected int getNoiseMask() {
 	int noise_mask_bit;
 	noise_mask_bit = Integer.parseInt(noise_mask, 16);
