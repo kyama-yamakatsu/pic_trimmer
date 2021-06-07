@@ -35,7 +35,6 @@ import org.apache.commons.imaging.formats.tiff.write.TiffOutputSet;
 public class Commander implements ActionListener {
 
     private final String    FileExtension = "jpg";
-    private final String    TrimedDirectory = "TRIMMED";
 
     private Main            main;
     private Detector        detector;
@@ -276,11 +275,15 @@ public class Commander implements ActionListener {
 	}
 
 	String currentDirectory = property.getDirPath();
+	String trimedDirectory =
+	    currentDirectory.substring(
+		currentDirectory.lastIndexOf(File.separator),
+		currentDirectory.length());
 	try {
-	    File dir = new File( currentDirectory + "/" + TrimedDirectory );
+	    File dir = new File( currentDirectory + trimedDirectory );
 	    dir.mkdir();
 	    String not_yet_exif_filepathname =
-		currentDirectory + "/" + TrimedDirectory + "/_Not_Yet_Exif_" +
+		currentDirectory + trimedDirectory + "/_Not_Yet_Exif_" +
 		pic_list[process_pic].substring(
 		    pic_list[process_pic].lastIndexOf(File.separator)+1,
 		    pic_list[process_pic].length());
@@ -308,18 +311,22 @@ public class Commander implements ActionListener {
     //   -> WriteExifMetadataExample.java
     private void addExif() {
 	String currentDirectory = property.getDirPath();
+	String trimedDirectory =
+	    currentDirectory.substring(
+		currentDirectory.lastIndexOf(File.separator),
+		currentDirectory.length());
 	try {
-	    File dir = new File( currentDirectory + "/" + TrimedDirectory );
+	    File dir = new File( currentDirectory + trimedDirectory );
 	    dir.mkdir();
 	    String not_yet_exif_filepathname =
-		currentDirectory + "/" + TrimedDirectory + "/_Not_Yet_Exif_" +
+		currentDirectory + trimedDirectory + "/_Not_Yet_Exif_" +
 		pic_list[process_pic].substring(
 		    pic_list[process_pic].lastIndexOf(File.separator)+1,
 		    pic_list[process_pic].length());
 	    File not_yet_exif_file = new File( not_yet_exif_filepathname );
 
 	    String filepathname =
-		currentDirectory + "/" + TrimedDirectory + "/" +
+		currentDirectory + trimedDirectory + "/" +
 		pic_list[process_pic].substring(
 		    pic_list[process_pic].lastIndexOf(File.separator)+1,
 		    pic_list[process_pic].length());
