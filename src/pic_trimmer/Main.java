@@ -23,6 +23,7 @@ public final class Main extends JFrame
     // 全て実際の絵のピクセルサイズ
     private Rectangle      pic_size = null;  // 原点はツール
     private Rectangle      edge_size = null; // 原点は pic
+    // trim size は縦横値(x, y, w, h)ではなく共通の長短値(x, y, long, short)
     private Rectangle      trim_size = null; // 原点は pic
     private double         scaleFactor = (double)1.0;
 
@@ -54,29 +55,30 @@ public final class Main extends JFrame
 	setVisible(true);
     }
 
-    protected void setTrimSize( int w, int h, String aspect) {
-	int trim_w, trim_h;
+    // trim size は長短値だが aspect 比は横長として適用する
+    protected void setTrimSize(int l, int s, String aspect) {
+	int trim_l, trim_s;
 
 	// aspect - { "3:2", "4:3", "16:9", "1:1" }
 	if ( aspect.startsWith("3") ) {
-	    trim_w = h*3/2; // h/2*3
-	    trim_h = w*2/3; // w/3*2
+	    trim_l = s*3/2; // height/2*3
+	    trim_s = l*2/3;  // width /3*2
 	} else if ( aspect.startsWith("4") ) {
-	    trim_w = h*4/3;
-	    trim_h = w*3/4;
+	    trim_l = s*4/3;
+	    trim_s = l*3/4;
 	} else if ( aspect.startsWith("16") ) {
-	    trim_w = h*16/9;
-	    trim_h = w*9/16;
+	    trim_l = s*16/9;
+	    trim_s = l*9/16;
 	} else {
-	    trim_w = h*1/1;
-	    trim_h = w*1/1;
+	    trim_l = s*1/1;
+	    trim_s = l*1/1;
 	}
 
-	if ( trim_w > w ) trim_w = w;
-	if ( trim_h > h ) trim_h = h;
+	if ( trim_l > l ) trim_l = l;
+	if ( trim_s > s ) trim_s = s;
 
 	trim_size = new Rectangle();
-	trim_size.setSize( trim_w, trim_h );
+	trim_size.setSize( trim_l, trim_s );
     }
 
     protected void setPictureSize(int w, int h) {
@@ -87,11 +89,20 @@ public final class Main extends JFrame
 
     protected void setEdge(int xl, int xr, int yu, int yb) {
 	edge_size = new Rectangle( xl, yu, xr-xl, yb-yu );
+	double trim_l = trim_size.getWidth();
+	double trim_s = trim_size.getHeight();
 	// edge のセンターに trim を置く
 	double x = edge_size.getX();
-	x += (edge_size.getWidth() - trim_size.getWidth())/2;
 	double y = edge_size.getY();
-	y += (edge_size.getHeight() - trim_size.getHeight())/2;
+	double w = edge_size.getWidth();
+	double h = edge_size.getHeight();
+	if ( w > h ) { // 横長
+	    x += (w - trim_l)/2;
+	    y += (h - trim_s)/2;
+	} else { // 縦長
+	    x += (w - trim_s)/2;
+	    y += (h - trim_l)/2;
+	}
 	trim_size.setLocation( (int)x, (int)y );
 	repaint();
     }
@@ -159,13 +170,16 @@ public final class Main extends JFrame
 	}
 
 	// トリム枠
-	if ( trim_size != null ) {
+	if ( trim_size != null && edge_size != null ) {
 	    g.setColor(Color.blue);
 	    int xx = x + (int)trim_size.getX();
 	    int yy = y + (int)trim_size.getY();
-	    w = (int)trim_size.getWidth();
-	    h = (int)trim_size.getHeight();
-	    g.drawRect(xx,yy,w-1,h-1);
+	    int l = (int)trim_size.getWidth();
+	    int s = (int)trim_size.getHeight();
+	    if ( w >= h )
+		g.drawRect(xx,yy,l-1,s-1);
+	    else
+		g.drawRect(xx,yy,s-1,l-1);
 	}
 /****
 	((Graphics2D)g).scale( 1.0, 1.0 );
@@ -194,7 +208,7 @@ public final class Main extends JFrame
 	    g.setColor(Color.blue);
 	    int xx = x + (int)(trim_size.getX() * scaleFactor);
 	    int yy = y + (int)(trim_size.getY() * scaleFactor);
-	    w = (int)(trim_size.getWidth() * scaleFactor);
+	    w = (int)(trim_size.getWidth() * scaleFactor); // 縦横注意
 	    h = (int)(trim_size.getHeight() * scaleFactor);
 	    g.drawRect(xx,yy,w-1,h-1);
 	    g.drawRect(xx+1,yy+1,w-1-2,h-1-2);
@@ -223,7 +237,7 @@ public final class Main extends JFrame
     // 絵の実サイズで処理
     public void mousePressed(MouseEvent e) {
         if ( (e.getModifiers() & InputEvent.BUTTON1_MASK) != 0 ) {
-	    if ( trim_size == null )
+	    if ( trim_size == null || edge_size == null )
 		return;
 
 	    Point p = e.getPoint();
@@ -234,6 +248,9 @@ public final class Main extends JFrame
 	    int y = (int)(pic_size.getY() + trim_size.getY());
 	    int w = (int)trim_size.getWidth();
 	    int h = (int)trim_size.getHeight();
+	    if ( edge_size.getWidth() < edge_size.getHeight() ) {
+		int a=w; w=h; h=a;
+	    }
 	    if ( px < x || (x+w) <= px )
 		return;
 	    if ( py < y || (y+h) <= py )
@@ -262,6 +279,11 @@ public final class Main extends JFrame
         if ( !isMousePressLNow || edge_size == null || trim_size == null )
             return;
 
+	int edge_x = (int)edge_size.getX();
+	int edge_y = (int)edge_size.getY();
+	int edge_w = (int)edge_size.getWidth();
+	int edge_h = (int)edge_size.getHeight();
+
 	Point p = e.getPoint();
 	int point_x = (int)(((double)p.x-F_EDGE) / scaleFactor);
 	int point_y = (int)(((double)p.y-F_TOP) / scaleFactor);
@@ -271,11 +293,9 @@ public final class Main extends JFrame
 	int t_new_y =  point_y - pic_y - drag_offset_y;
 	int t_w = (int)trim_size.getWidth();
 	int t_h = (int)trim_size.getHeight();
-
-	int edge_x = (int)edge_size.getX();
-	int edge_y = (int)edge_size.getY();
-	int edge_w = (int)edge_size.getWidth();
-	int edge_h = (int)edge_size.getHeight();
+	if ( edge_w < edge_h ) {
+	    int a=t_w; t_w=t_h; t_h=a;
+	}
 
 	if ( t_new_x < edge_x ) {
 	    t_new_x = edge_x;

@@ -158,13 +158,19 @@ public class Commander implements ActionListener {
 	    int xr = detector.getEdge_r() - property.getRMargin();
 	    int yu = detector.getEdge_u() + property.getUMargin();
 	    int yb = detector.getEdge_b() - property.getBMargin();
-	    int trim_w = xr - xl;
-	    int trim_h = yb - yu;
-	    main.setTrimSize( trim_w, trim_h, property.getAspect() );
+
+	    // トリムサイズは縦横ではなく長短
+	    int trim_l = xr - xl;    // 横長として
+	    int trim_s = yb - yu;
+	    if ( trim_l < trim_s ) { // 縦長なら
+		trim_l = yb - yu;
+		trim_s = xr - xl;
+	    }
+	    main.setTrimSize( trim_l, trim_s, property.getAspect() );
 	    main.setEdge(xl, xr, yu, yb);
 	    main.setPictureSize(img_w, img_h);
 
-	    message.println("one trim size = " + trim_w + " : " + trim_h);
+	    message.println("trim long/short = " + trim_l + " : " + trim_s);
 	} catch(IOException iox) {
 	    message.printErr("can't read picture.");
 	}
@@ -204,7 +210,7 @@ public class Commander implements ActionListener {
 		     endsWith(FileExtension) )
 		    pic_list[t++] = file_list[i].toString();
 
-	int trim_w = 123456789, trim_h = 123456789;
+	int trim_l = 123456789, trim_s = 123456789;
 	for( int i=0; i<pic_list.length; i++ ) {
 	    try {
 		File file = new File( pic_list[i] );
@@ -222,10 +228,18 @@ public class Commander implements ActionListener {
 		    pic_list[i] + " - " + xl + " : " + yu + " : " +xr+" : "+yb);
 
 		// 最も小さいトリムサイズを求める
-		if ( trim_w > ( xr - xl ) )
-		    trim_w = xr - xl;
-		if ( trim_h > ( yb - yu ) )
-		    trim_h = yb - yu;
+		// トリムサイズは縦横ではなく長短
+		if ( (xr-xl) > (yb-yu) ) {       // 横長の場合
+		    if ( trim_l > ( xr - xl ) )
+			trim_l = xr - xl;
+		    if ( trim_s > ( yb - yu ) )
+			trim_s = yb - yu;
+		} else {                         // 縦長の場合
+		    if ( trim_l > ( yb - yu ) )
+			trim_l = yb - yu;
+		    if ( trim_s > ( xr - xl ) )
+			trim_s = xr - xl;
+		}
 
 	    } catch(IOException iox) {
 		message.printErr("can't read picture.");
@@ -233,7 +247,7 @@ public class Commander implements ActionListener {
 	    }
 	}
 	property.setDirPath(dir.getPath());
-	main.setTrimSize( trim_w, trim_h, property.getAspect() );
+	main.setTrimSize( trim_l, trim_s, property.getAspect() );
 	return true;
     }
 
@@ -290,13 +304,15 @@ public class Commander implements ActionListener {
 
 	    File fo = new File( not_yet_exif_filepathname );
 	    Rectangle trim = main.getTrim();
+	    int w = (int)trim.getWidth();
+	    int h = (int)trim.getHeight();
+	    // トリムサイズは縦横ではなく長短
+	    if ( pic_image.getWidth() < pic_image.getHeight() ) {
+		int a=w; w=h; h=a;
+	    }
 	    BufferedImage out_img =
-		pic_image.getSubimage(
-		    (int)trim.getX(), (int)trim.getY(),
-		    (int)trim.getWidth(), (int)trim.getHeight());
+		pic_image.getSubimage((int)trim.getX(),(int)trim.getY(),w,h);
 	    ImageIO.write(out_img, "jpg", fo);
-
-	    message.println("write  = " + not_yet_exif_filepathname);
 	    return true;
 
 	} catch(IOException iox) {
@@ -393,6 +409,8 @@ public class Commander implements ActionListener {
 
             new ExifRewriter().updateExifMetadataLossless(
 		not_yet_exif_file, os, outputSet);
+
+	    message.println("write  = " + filepathname);
 
 	    // Exif 処理をしていない１時ファイルは削除する
 	    not_yet_exif_file.delete();
