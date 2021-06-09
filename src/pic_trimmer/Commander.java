@@ -125,11 +125,7 @@ public class Commander implements ActionListener {
 	    thread.start();
 
 	} else if ( cmd.startsWith("Save and ") ) {
-	    if ( out_pic() )
-		addExif(); // 正常出力出来れば Exif 情報を（変更）追加
-
-	    process_pic++;
-	    triming();
+	    saveAndNextCommand();
 
 	} else if ( cmd.startsWith("Oneshot") ) {
 	    Oneshot();
@@ -137,6 +133,13 @@ public class Commander implements ActionListener {
 	} else if ( cmd.startsWith("Exit") ) {
 	    System.exit(0);
 	}
+    }
+
+    protected void saveAndNextCommand() {
+	if ( out_pic() )
+	    addExif(); // 正常出力出来れば Exif 情報を（変更）追加
+	process_pic++;
+	triming();
     }
 
     private void Oneshot() {

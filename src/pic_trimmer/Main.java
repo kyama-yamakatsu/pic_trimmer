@@ -16,7 +16,8 @@ import javax.swing.*;
 
 
 public final class Main extends JFrame
-    implements MouseListener, MouseMotionListener, ComponentListener {
+    implements MouseListener, MouseMotionListener, KeyListener,
+               ComponentListener {
 
     private Commander      commander;
 
@@ -50,6 +51,7 @@ public final class Main extends JFrame
 
         addMouseListener(this);
         addMouseMotionListener(this);
+	addKeyListener(this);
 	addComponentListener(this);
 	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	setVisible(true);
@@ -222,12 +224,69 @@ public final class Main extends JFrame
     }
 
 
-    public void componentHidden(ComponentEvent e) {}
-    public void componentShown(ComponentEvent e) {}
-    public void componentMoved(ComponentEvent e) {}
+    public void componentHidden(ComponentEvent e)  {}
+    public void componentShown(ComponentEvent e)   {}
+    public void componentMoved(ComponentEvent e)   {}
     public void componentResized(ComponentEvent e) {
 	changeZoomFactor();
     }
+
+
+    // KeyListener interface
+    public void keyPressed(KeyEvent e) {
+        if ( edge_size == null || trim_size == null )
+            return;
+
+        int code = e.getKeyCode();
+	int t_new_x = (int)trim_size.getX();
+	int t_new_y = (int)trim_size.getY();
+	int pixel = (int)( 1.0 / scaleFactor);
+
+        switch(code) {
+        case KeyEvent.VK_SPACE:
+        case KeyEvent.VK_ENTER:
+	    commander.saveAndNextCommand();
+	    return;
+
+        case KeyEvent.VK_E:
+	     System.exit(0);
+	    return;
+
+        case KeyEvent.VK_UP: t_new_y -= pixel; break;
+        case KeyEvent.VK_DOWN: t_new_y += pixel; break;
+        case KeyEvent.VK_LEFT: t_new_x -= pixel; break;
+        case KeyEvent.VK_RIGHT: t_new_x += pixel; break;
+        default:
+            return;
+	}
+
+	int edge_x = (int)edge_size.getX();
+	int edge_y = (int)edge_size.getY();
+	int edge_w = (int)edge_size.getWidth();
+	int edge_h = (int)edge_size.getHeight();
+	int t_w = (int)trim_size.getWidth();
+	int t_h = (int)trim_size.getHeight();
+	if ( edge_w < edge_h ) {
+	    int a=t_w; t_w=t_h; t_h=a;
+	}
+
+	if ( t_new_x < edge_x ) {
+	    t_new_x = edge_x;
+	} else if ( (edge_x+edge_w) <= (t_new_x+t_w) ) {
+	    t_new_x = edge_x + (edge_w - t_w);
+	}
+
+	if ( t_new_y < edge_y ) {
+	    t_new_y = edge_y;
+	} else if ( (edge_y+edge_h) <= (t_new_y+t_h) ) {
+	    t_new_y = edge_y + (edge_h - t_h);
+	}
+
+	trim_size.setLocation( t_new_x, t_new_y );
+        repaint();
+    }
+    public void keyReleased(KeyEvent e) {}
+    public void keyTyped(KeyEvent e)    {}
 
 
     // MouseListener interface.
