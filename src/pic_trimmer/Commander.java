@@ -10,6 +10,7 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 
 import java.io.*;
+import java.nio.file.*;
 import java.awt.*;
 import javax.swing.*;
 
@@ -80,6 +81,10 @@ public class Commander implements ActionListener {
 	menuItem.addActionListener(this);
         popupMenu.add(menuItem);
 
+	menuItem = new JMenuItem("Set Picture directory and Set Exif only");
+        menuItem.addActionListener(this);
+        popupMenu.add(menuItem);
+
  	menuItem = new JMenuItem("Oneshot trim check");
         menuItem.addActionListener(this);
         popupMenu.add(menuItem);
@@ -108,6 +113,16 @@ public class Commander implements ActionListener {
             loading = false;
         }
     }
+    private class setPicture_setExif_thread implements Runnable {
+	setPicture_setExif_thread() {}
+        public void run() {
+            loading = true;        // loading scope
+	    boolean result = setPicture_directory_and_Set_Exif();
+	    if ( result )
+		message.println("対象の Exif データ設定処理は終わりました");
+            loading = false;
+        }
+    }
 
     public void actionPerformed(ActionEvent e) {
         if ( loading )
@@ -119,13 +134,16 @@ public class Commander implements ActionListener {
 	    property.set();
 	    property.setVisible(true);
 
-	} else if ( cmd.startsWith("Set Picture") ) {
-            Thread thread =
-		thread = new Thread( new setPicture_detectTrim_thread() );
+	} else if ( cmd.startsWith("Set Picture directory and Detect") ) {
+            Thread thread = new Thread( new setPicture_detectTrim_thread() );
 	    thread.start();
 
 	} else if ( cmd.startsWith("Save and ") ) {
 	    saveAndNextCommand();
+
+	} else if ( cmd.startsWith("Set Picture directory and Set Exif") ) {
+            Thread thread = new Thread( new setPicture_setExif_thread() );
+	    thread.start();
 
 	} else if ( cmd.startsWith("Oneshot") ) {
 	    Oneshot();
@@ -251,6 +269,76 @@ public class Commander implements ActionListener {
 	}
 	property.setDirPath(dir.getPath());
 	main.setTrimSize( trim_l, trim_s, property.getAspect() );
+	return true;
+    }
+
+    private boolean setPicture_directory_and_Set_Exif() {
+	String currentDirectory = property.getDirPath();
+	JFileChooser fc = new JFileChooser(currentDirectory);
+	fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+	int selected = fc.showOpenDialog(main);
+	if ( selected != JFileChooser.APPROVE_OPTION )
+	    return false;
+
+	File dir = fc.getSelectedFile();
+	File[] file_list = dir.listFiles();
+	if ( file_list == null ) {
+	    message.printErr("Error!");
+	    return false;
+	}
+
+	int t = 0;
+	for( int i=0; i<file_list.length; i++ )
+	    if ( file_list[i].isFile() )
+		if ( file_list[i].toString().toLowerCase().
+		     endsWith(FileExtension) )
+		    t++;
+	if ( t == 0 ) {
+	    message.printErr("No picture!");
+	    return false;
+	}
+
+	pic_list = new String[t];
+	t = 0;
+	for( int i=0; i<file_list.length; i++ )
+	    if ( file_list[i].isFile() )
+		if ( file_list[i].toString().toLowerCase().
+		     endsWith(FileExtension) )
+		    pic_list[t++] = file_list[i].toString();
+
+	property.setDirPath(dir.getPath());
+
+	String trimedDirectory =
+	    currentDirectory.substring(
+		currentDirectory.lastIndexOf(File.separator),
+		currentDirectory.length());
+	dir = new File( currentDirectory + trimedDirectory );
+	dir.mkdir();
+
+	process_pic = 0;
+	while( process_pic < pic_list.length ) {
+	    // copy org pic file to tempolary pic file
+	    try {
+		String not_yet_exif_filepathname =
+		    currentDirectory + trimedDirectory + "/_Not_Yet_Exif_" +
+		    pic_list[process_pic].substring(
+			pic_list[process_pic].lastIndexOf(File.separator)+1,
+			pic_list[process_pic].length());
+		Files.copy(
+		    Paths.get(pic_list[process_pic]),
+		    Paths.get(not_yet_exif_filepathname),
+		    StandardCopyOption.REPLACE_EXISTING);
+		message.println("copy = " + not_yet_exif_filepathname);
+
+	    } catch(IOException iox) {
+		message.printErr("can't copy file.");
+		return false;
+	    }
+
+	    // add Exit data
+	    addExif();
+	    process_pic++;
+	}
 	return true;
     }
 
@@ -393,7 +481,7 @@ public class Commander implements ActionListener {
 	    int y = property.getYyyy();
 	    int m = property.getM();
 	    int d = property.getD();
-	    cl.set( y, m-1, d,  7, 0, 0 ); // 時間は無意味
+	    cl.set( y, m-1, d,  0, 0, 0 ); // 時間は無意味
 	    Date date = new Date( cl.getTimeInMillis() );
 	    SimpleDateFormat dateFormat =
 		new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
