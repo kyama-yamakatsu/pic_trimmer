@@ -307,7 +307,7 @@ public class Commander implements ActionListener {
 		    pic_list[t++] = file_list[i].toString();
 
 	property.setDirPath(dir.getPath());
-
+	currentDirectory = dir.getPath();
 	String trimedDirectory =
 	    currentDirectory.substring(
 		currentDirectory.lastIndexOf(File.separator),
